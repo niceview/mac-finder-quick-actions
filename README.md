@@ -22,6 +22,14 @@ macOS(빠른 동작을 지원하는 버전) 외에는 전부 선택 사항입니
 
 ## 설치
 
+한 줄이면 됩니다. 저장소를 clone 하지 않고, 임시 폴더에 받아서 설치한 뒤 지웁니다.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/niceview/mac-finder-quick-actions/main/install.sh | bash
+```
+
+무엇을 실행하는지 먼저 보고 싶다면 위 URL을 브라우저로 열어보거나, 저장소를 clone 해서 실행해도 됩니다.
+
 ```sh
 git clone https://github.com/niceview/mac-finder-quick-actions.git
 cd mac-finder-quick-actions
@@ -64,8 +72,10 @@ DROPLET_NAME=Workspace \
 ## 제거
 
 ```sh
-./uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/niceview/mac-finder-quick-actions/main/uninstall.sh | bash
 ```
+
+저장소를 clone 해두었다면 `./uninstall.sh` 로도 됩니다.
 
 툴바에 올려둔 아이콘은 ⌘ 누른 채 툴바 밖으로 드래그해 빼면 됩니다.
 

@@ -7,11 +7,32 @@
 # 커스터마이즈 (환경변수로 덮어쓰기):
 #   VSCODE_MENU_LABEL="Open in VS Code" ./install.sh
 #   TERM_APP=iTerm ./install.sh
+#
+# 저장소를 clone 해서 실행해도 되고, 파이프로 실행해도 된다:
+#   curl -fsSL https://raw.githubusercontent.com/niceview/mac-finder-quick-actions/main/install.sh | bash
 
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$REPO_DIR/src"
+REPO_URL="${REPO_URL:-https://github.com/niceview/mac-finder-quick-actions}"
+REPO_BRANCH="${REPO_BRANCH:-main}"
+
+# 임시 작업 공간. 트랩은 여기 한 곳에만 건다 (여러 번 걸면 앞의 것이 지워진다).
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+# 파이프로 실행되면 BASH_SOURCE 가 스크립트 경로를 가리키지 않으므로 src/ 를 찾을 수 없다.
+# 그럴 때는 저장소 tarball 을 받아서 쓴다 (git 없이도 동작).
+SRC=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]:-}" ]; then
+	candidate="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/src"
+	[ -d "$candidate" ] && SRC="$candidate"
+fi
+if [ -z "$SRC" ]; then
+	printf '\n▸ 저장소 내려받기\n  %s (%s)\n' "$REPO_URL" "$REPO_BRANCH"
+	curl -fsSL "$REPO_URL/archive/refs/heads/$REPO_BRANCH.tar.gz" | tar xz -C "$WORK"
+	SRC="$(find "$WORK" -maxdepth 2 -type d -name src | head -1)"
+	[ -n "$SRC" ] || { printf '  ⚠ 내려받은 아카이브에서 src/ 를 찾지 못했습니다\n' >&2; exit 1; }
+fi
 
 VSCODE_MENU_LABEL="${VSCODE_MENU_LABEL:-Visual Studio Code 로 열기}"
 HERDR_MENU_LABEL="${HERDR_MENU_LABEL:-Herdr 로 열기}"
@@ -120,8 +141,8 @@ fi
 step "드롭릿 앱 빌드"
 
 if [ -n "$HERDR_BIN" ]; then
-	tmp="$(mktemp -d)"
-	trap 'rm -rf "$tmp"' EXIT
+	tmp="$WORK/droplet"
+	mkdir -p "$tmp"
 	cp "$SRC/herdr-droplet.applescript" "$tmp/droplet.applescript"
 	substitute "$tmp/droplet.applescript" "$HERDR_BIN" "$TERM_APP" ""
 

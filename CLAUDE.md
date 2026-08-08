@@ -8,6 +8,10 @@ An installer for three macOS Finder integrations. There is no build step and no 
 
 ## Architecture
 
+`install.sh` is the only entry point and must work **two ways**: run from a clone, or piped (`curl … | bash`). When piped, `BASH_SOURCE[0]` is not a readable file, so the script cannot find `src/` next to itself and downloads the repo tarball into a temp dir instead. Anything that assumes a checkout exists on disk will silently break the one-liner — test both paths (`./install.sh` and `cat install.sh | bash`).
+
+There is exactly **one `mktemp -d` and one `EXIT` trap**, at the top. A second `trap … EXIT` anywhere replaces the first and leaks the temp dir; reuse `$WORK/<subdir>` instead.
+
 `src/` holds **templates**, not finished artifacts. `install.sh` copies them into place and substitutes three tokens:
 
 | Token | Becomes |
