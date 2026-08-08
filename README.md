@@ -14,7 +14,9 @@ macOS Finder에서 파일이나 폴더를 우클릭해 **VS Code** 또는 **[her
 
 ## 요구사항
 
-macOS(빠른 동작을 지원하는 버전) 외에는 전부 선택 사항입니다. 없는 항목은 건너뛰고 나머지만 설치됩니다.
+아래 중 **최소 하나**는 있어야 합니다. 없는 항목은 건너뛰고 나머지만 설치되며, 하나도 없으면 아무것도 설치하지 않고 안내 후 종료합니다(exit 1).
+
+의존 앱이 사라진 상태로 다시 실행하면, 그 앱을 쓰던 예전 설치본을 지웁니다. 눌러도 아무 일도 일어나지 않는 죽은 메뉴가 남는 것보다 낫기 때문입니다. 앱을 다시 설치하고 스크립트를 재실행하면 되살아납니다.
 
 - [Visual Studio Code](https://code.visualstudio.com/) — VS Code 빠른 동작용
 - `herdr` — herdr 빠른 동작 및 드롭릿용. `command -v herdr` 로 찾으므로 Apple Silicon(`/opt/homebrew`)과 Intel(`/usr/local`) 모두 자동 인식됩니다

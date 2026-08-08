@@ -34,7 +34,13 @@ The droplet (`src/herdr-droplet.applescript`) exists because **Finder's sidebar 
 
 **Never ship a prebuilt `.app`.** The droplet is compiled with `osacompile` on the target machine to avoid Gatekeeper quarantine on a transferred bundle. After swapping in a custom icon you must also `rm Contents/Resources/Assets.car` and delete `CFBundleIconName` from `Info.plist` — either one takes precedence over `droplet.icns` and the icon silently won't change. Re-run `codesign --force --deep -s -` after touching bundle resources.
 
-**Missing dependencies must skip, not abort.** VS Code, herdr, and Ghostty are each optional; `install.sh` installs whatever it can and reports the rest under 건너뜀.
+**Missing dependencies must skip, not abort.** VS Code, herdr, and Ghostty are each optional; `install.sh` installs whatever it can and reports the rest under 건너뜀. Three rules hang off this:
+
+- A dependency that disappeared takes its previously installed artifact with it (`drop_stale()`), reported under 제거됨 — a menu item whose binary is gone does nothing when clicked, which is worse than its absence.
+- `pbs -flush` / `killall Finder` only run when something was actually installed or removed. Never restart Finder for a no-op.
+- If nothing was installed, print guidance to stderr and `exit 1`. Exiting 0 makes a fully failed install look successful to any caller.
+
+When testing these paths, note that `PATH=/usr/bin:/bin bash install.sh` really does delete your working artifacts — that is the intended behavior, so reinstall afterwards.
 
 This repo is public. Keep personal paths and internal config out of it.
 

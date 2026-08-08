@@ -47,6 +47,17 @@ DROPLET="$APPS_DIR/$DROPLET_NAME.app"
 
 installed=()
 skipped=()
+removed=()
+
+# 의존 앱이 사라졌는데 예전 설치본이 남아 있으면, 눌러도 아무 일도 일어나지 않는
+# 죽은 메뉴가 된다. 그럴 바엔 지우는 편이 낫다 (다시 설치하면 되살아난다).
+drop_stale() {
+	local path="$1" what="$2"
+	if [ -e "$path" ]; then
+		rm -rf "$path"
+		removed+=("$what")
+	fi
+}
 
 info()  { printf '  %s\n' "$*"; }
 step()  { printf '\n▸ %s\n' "$*"; }
@@ -128,6 +139,7 @@ if [ -n "$VSCODE_APP" ]; then
 	info "$VSCODE_BUNDLE"
 else
 	skipped+=("VS Code 빠른 동작 (VS Code 미설치)")
+	drop_stale "$VSCODE_BUNDLE" "이전 VS Code 빠른 동작 (VS Code 가 없어짐)"
 fi
 
 if [ -n "$HERDR_BIN" ]; then
@@ -136,6 +148,7 @@ if [ -n "$HERDR_BIN" ]; then
 	info "$HERDR_BUNDLE"
 else
 	skipped+=("herdr 빠른 동작 (herdr 미설치)")
+	drop_stale "$HERDR_BUNDLE" "이전 herdr 빠른 동작 (herdr 가 없어짐)"
 fi
 
 step "드롭릿 앱 빌드"
@@ -175,22 +188,46 @@ if [ -n "$HERDR_BIN" ]; then
 	info "$DROPLET"
 else
 	skipped+=("herdr 드롭릿 앱 (herdr 미설치)")
+	drop_stale "$DROPLET" "이전 herdr 드롭릿 앱 (herdr 가 없어짐)"
 fi
 
-step "Finder 서비스 등록"
-/System/Library/CoreServices/pbs -flush || true
-killall Finder 2>/dev/null || true
-info "서비스 캐시를 비우고 Finder 를 재시작했습니다"
+# 설치도 제거도 없었다면 Finder 를 건드릴 이유가 없다.
+if [ $((${#installed[@]} + ${#removed[@]})) -gt 0 ]; then
+	step "Finder 서비스 등록"
+	/System/Library/CoreServices/pbs -flush || true
+	killall Finder 2>/dev/null || true
+	info "서비스 캐시를 비우고 Finder 를 재시작했습니다"
+fi
 
 printf '\n─────────────────────────────────────────\n'
 if [ ${#installed[@]} -gt 0 ]; then
 	printf '설치됨\n'
 	for i in "${installed[@]}"; do printf '  ✓ %s\n' "$i"; done
 fi
+if [ ${#removed[@]} -gt 0 ]; then
+	printf '제거됨\n'
+	for r in "${removed[@]}"; do printf '  ✗ %s\n' "$r"; done
+fi
 if [ ${#skipped[@]} -gt 0 ]; then
 	printf '건너뜀\n'
 	for s in "${skipped[@]}"; do printf '  – %s\n' "$s"; done
 fi
+
+# 설치된 게 하나도 없으면 사용법을 안내해봐야 존재하지 않는 메뉴를 가리킬 뿐이다.
+# 호출한 쪽이 실패를 알아챌 수 있도록 0 이 아닌 값으로 끝낸다.
+if [ ${#installed[@]} -eq 0 ]; then
+	cat >&2 <<'EOF'
+
+설치된 항목이 없습니다. 최소 하나는 있어야 합니다:
+
+  · Visual Studio Code  — https://code.visualstudio.com
+  · herdr               — 설치 후 `command -v herdr` 로 잡히는지 확인하세요
+
+설치한 뒤 이 스크립트를 다시 실행하면 됩니다.
+EOF
+	exit 1
+fi
+
 cat <<EOF
 
 사용법
