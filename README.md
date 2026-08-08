@@ -2,6 +2,12 @@
 
 macOS Finder에서 파일이나 폴더를 우클릭해 **VS Code** 또는 **[herdr](https://github.com/)** 워크스페이스로 바로 여는 빠른 동작(Quick Action)과, 툴바/Dock에 올려두고 드래그 앤 드롭으로 쓰는 드롭릿 앱을 설치합니다.
 
+```sh
+curl -fsSL https://raw.githubusercontent.com/niceview/mac-finder-quick-actions/main/install.sh | bash
+```
+
+저장소를 clone 하지 않습니다. 임시 폴더에 받아 설치하고 지웁니다. 자세한 설치 방법은 [아래](#설치)를 참고하세요.
+
 ## 설치되는 것
 
 | 항목 | 설치 위치 | 하는 일 |
@@ -23,8 +29,6 @@ macOS Finder에서 파일이나 폴더를 우클릭해 **VS Code** 또는 **[her
 - [Ghostty](https://ghostty.org/) — herdr를 띄울 터미널. 다른 터미널은 `TERM_APP` 으로 지정
 
 ## 설치
-
-한 줄이면 됩니다. 저장소를 clone 하지 않고, 임시 폴더에 받아서 설치한 뒤 지웁니다.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/niceview/mac-finder-quick-actions/main/install.sh | bash
