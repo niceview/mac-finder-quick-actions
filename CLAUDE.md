@@ -12,15 +12,16 @@ An installer for four macOS Finder integrations (two Quick Actions, two droplets
 
 There is exactly **one `mktemp -d` and one `EXIT` trap**, at the top. A second `trap … EXIT` anywhere replaces the first and leaks the temp dir; reuse `$WORK/<subdir>` instead.
 
-`src/` holds **templates**, not finished artifacts. `install.sh` copies them into place and substitutes three tokens:
+`src/` holds **templates**, not finished artifacts. `install.sh` copies them into place and substitutes four tokens:
 
 | Token | Becomes |
 |---|---|
 | `__HERDR__` | Absolute path to the `herdr` binary, resolved per machine |
 | `__TERM_APP__` | Terminal app name (default `Ghostty`) |
 | `__MENU_LABEL__` | The string shown in Finder's right-click menu |
+| `__VSCODE_APP__` | Absolute path to the VS Code app bundle (droplet only) |
 
-Substitution runs through an inline Python heredoc in `install.sh` (`substitute()`), not `sed`, because the values contain `/` and the labels are non-ASCII.
+Substitution runs through an inline Python heredoc in `install.sh` (`substitute()`), not `sed`, because the values contain `/` and the labels are non-ASCII. It takes any number of `__TOKEN__=value` pairs. Note this makes **`python3` a hard runtime dependency**, and a stock macOS has none until Command Line Tools are installed — see `docs/gui-installer-plan.md`.
 
 A `.workflow` bundle is just `Contents/Info.plist` + `Contents/document.wflow` — Automator's GUI is not needed to author one. `Info.plist` declares the Service (`NSMessage: runWorkflowAsService`, `NSSendFileTypes: public.item`, restricted to `com.apple.finder`); `document.wflow` carries a single `com.apple.RunShellScript` action whose `ActionParameters.COMMAND_STRING` holds the actual shell script, with `inputMethod: 1` meaning "pass input as arguments" (`$@`). If you need to know the valid parameter keys for an Automator action, read `/System/Library/Automator/<Action Name>.action/Contents/Info.plist`.
 
@@ -38,6 +39,8 @@ Both droplets implement `on run` as well as `on open`, because **a Finder toolba
 
 **Never ship a prebuilt `.app`.** The droplet is compiled with `osacompile` on the target machine to avoid Gatekeeper quarantine on a transferred bundle. After swapping in a custom icon you must also `rm Contents/Resources/Assets.car` and delete `CFBundleIconName` from `Info.plist` — either one takes precedence over `droplet.icns` and the icon silently won't change. Re-run `codesign --force --deep -s -` after touching bundle resources.
 
+**AppleScript's `do shell script` runs with a minimal PATH** (`/usr/bin:/bin:/usr/sbin:/sbin`), never the user's login shell PATH. That is why `__HERDR__` is substituted as an absolute path instead of letting the droplet call `herdr` by name. Anything new that shells out from AppleScript must resolve binaries absolutely — `command -v herdr` and `brew --prefix` both fail there.
+
 **Missing dependencies must skip, not abort.** VS Code, herdr, and Ghostty are each optional; `install.sh` installs whatever it can and reports the rest under 건너뜀. Three rules hang off this:
 
 - A dependency that disappeared takes its previously installed artifact with it (`drop_stale()`), reported under 제거됨 — a menu item whose binary is gone does nothing when clicked, which is worse than its absence.
@@ -47,6 +50,12 @@ Both droplets implement `on run` as well as `on open`, because **a Finder toolba
 When testing these paths, note that `PATH=/usr/bin:/bin bash install.sh` really does delete your working artifacts — that is the intended behavior, so reinstall afterwards.
 
 This repo is public. Keep personal paths and internal config out of it.
+
+Commit messages are written in Korean.
+
+Planned-but-unimplemented work lives in `docs/`. Read `docs/gui-installer-plan.md` before touching anything about distribution or packaging.
+
+Run `git fetch` at the start of a session. `git status` reports a clean tree without saying anything about the remote, and this repo has already been through one unrelated-histories divergence that went unnoticed until push time.
 
 ## Verifying a change
 
@@ -67,6 +76,14 @@ Confirm every token was substituted:
 ```sh
 grep -c "__HERDR__\|__TERM_APP__\|__MENU_LABEL__" "$HOME/Library/Services/Open in Herdr.workflow/Contents/"*   # expect 0
 osadecompile "$HOME/Applications/Herdr.app" | grep -c "__"                                                      # expect 0
+osadecompile "$HOME/Applications/Open in VS Code.app" | grep -c "__"                                            # expect 0
+```
+
+The borrowed icon must match the donor app, not a random file-type icon (hashes must be equal):
+
+```sh
+shasum "/Applications/Visual Studio Code.app/Contents/Resources/Code.icns" \
+       "$HOME/Applications/Open in VS Code.app/Contents/Resources/droplet.icns"
 ```
 
 Exercise the artifacts without touching the mouse:
