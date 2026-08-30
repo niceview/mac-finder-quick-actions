@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An installer for three macOS Finder integrations. There is no build step and no test framework — `install.sh` generates artifacts into the live system, so the only meaningful test is installing and exercising them.
+An installer for four macOS Finder integrations (two Quick Actions, two droplets). There is no build step and no test framework — `install.sh` generates artifacts into the live system, so the only meaningful test is installing and exercising them.
 
 ## Architecture
 
@@ -24,7 +24,11 @@ Substitution runs through an inline Python heredoc in `install.sh` (`substitute(
 
 A `.workflow` bundle is just `Contents/Info.plist` + `Contents/document.wflow` — Automator's GUI is not needed to author one. `Info.plist` declares the Service (`NSMessage: runWorkflowAsService`, `NSSendFileTypes: public.item`, restricted to `com.apple.finder`); `document.wflow` carries a single `com.apple.RunShellScript` action whose `ActionParameters.COMMAND_STRING` holds the actual shell script, with `inputMethod: 1` meaning "pass input as arguments" (`$@`). If you need to know the valid parameter keys for an Automator action, read `/System/Library/Automator/<Action Name>.action/Contents/Info.plist`.
 
-The droplet (`src/herdr-droplet.applescript`) exists because **Finder's sidebar right-click menu never shows Services/Quick Actions** — that is a macOS limitation with no workaround. A droppable app is the only way to act on a sidebar item.
+The droplets (`src/herdr-droplet.applescript`, `src/vscode-droplet.applescript`) exist because **Finder's sidebar right-click menu never shows Services/Quick Actions** — that is a macOS limitation with no workaround. A droppable app is the only way to act on a sidebar item.
+
+Both droplets implement `on run` as well as `on open`, because **a Finder toolbar icon receives no arguments when clicked** — only when something is dropped on it. `on run` reads the front Finder window's folder, which requires sending Apple Events to Finder and therefore triggers a one-time Automation permission prompt. That prompt is keyed to the code-signing hash, so a reinstall (which recompiles and re-signs) makes it reappear. Everything else in this repo deliberately avoids Apple Events and uses only shell, to keep that prompt off the Quick Action paths.
+
+`build_droplet()` is shared by both. When borrowing an icon it prefers the donor's `CFBundleIconFile` over the first `.icns` found — VS Code's `Resources` holds dozens of file-type icons, and `find | head -1` picks a wrong one.
 
 ## Constraints that are easy to break
 

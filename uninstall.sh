@@ -3,12 +3,14 @@
 set -euo pipefail
 
 DROPLET_NAME="${DROPLET_NAME:-Herdr}"
+VSCODE_DROPLET_NAME="${VSCODE_DROPLET_NAME:-Open in VS Code}"
 SERVICES_DIR="$HOME/Library/Services"
 
 targets=(
 	"$SERVICES_DIR/Open in VS Code.workflow"
 	"$SERVICES_DIR/Open in Herdr.workflow"
 	"$HOME/Applications/$DROPLET_NAME.app"
+	"$HOME/Applications/$VSCODE_DROPLET_NAME.app"
 	# 초기 수동 설치본 (번들 이름이 한글이던 시절)
 	"$SERVICES_DIR/Visual Studio Code 로 열기.workflow"
 	"$SERVICES_DIR/Herdr 로 열기.workflow"
